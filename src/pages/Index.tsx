@@ -22,7 +22,7 @@ import {
   Brain 
 } from "lucide-react";
 import { toast } from "sonner";
-import AIAgentProgressBar from "@/components/AIAgentProgressBar";
+import AITaskProgressBar from "@/components/AITaskProgressBar";
 
 const Index = () => {
   const [isReviewStarted, setIsReviewStarted] = useState(false);
@@ -232,7 +232,7 @@ const Index = () => {
                               </div>
                             </div>
                             
-                            <AIAgentProgressBar 
+                            <AITaskProgressBar 
                               progress={progress}
                               isComplete={analysisComplete}
                             />
