@@ -11,22 +11,46 @@ const AITaskProgressBar = ({ progress, isComplete }: AITaskProgressBarProps) => 
   const [currentMessage, setCurrentMessage] = useState(0);
   const [isMessageTransitioning, setIsMessageTransitioning] = useState(false);
   const [displayedMessage, setDisplayedMessage] = useState("");
+  const [currentCategory, setCurrentCategory] = useState("Data Collection");
   
-  // Define our AI tasks messages
-  const taskMessages = [
-    "Collecting user account and permission data...",
-    "Parsing user roles and group assignments...",
-    "Analyzing login activity across systems...",
-    "Identifying unused or stale user accounts...",
-    "Detecting anomalous access behaviors...",
-    "Evaluating access privileges against organizational policies...",
-    "Checking access alignment with employment status...",
-    "Reviewing service and shared account permissions...",
-    "Flagging elevated access without justification...",
-    "Correlating user access with job responsibilities...",
-    "Compiling revocation and modification recommendations...",
-    "Finalizing access review report for summary..."
+  // Define our AI tasks messages with categories
+  const taskCategories = [
+    {
+      category: "Data Collection",
+      messages: [
+        "Collecting user account and permission data...",
+        "Parsing user roles and group assignments..."
+      ]
+    },
+    {
+      category: "Analysis",
+      messages: [
+        "Analyzing login activity across systems...",
+        "Identifying unused or stale user accounts...",
+        "Detecting anomalous access behaviors..."
+      ]
+    },
+    {
+      category: "Evaluation",
+      messages: [
+        "Evaluating access privileges against organizational policies...",
+        "Checking access alignment with employment status...",
+        "Reviewing service and shared account permissions..."
+      ]
+    },
+    {
+      category: "Recommendations",
+      messages: [
+        "Flagging elevated access without justification...",
+        "Correlating user access with job responsibilities...",
+        "Compiling revocation and modification recommendations...",
+        "Finalizing access review report for summary..."
+      ]
+    }
   ];
+  
+  // Flatten messages for easier access
+  const taskMessages = taskCategories.flatMap(category => category.messages);
   
   // Rotate through messages
   useEffect(() => {
@@ -36,7 +60,20 @@ const AITaskProgressBar = ({ progress, isComplete }: AITaskProgressBarProps) => 
       setIsMessageTransitioning(true);
       
       setTimeout(() => {
-        setCurrentMessage((prev) => (prev + 1) % taskMessages.length);
+        // Calculate next message index
+        const nextMessageIndex = (currentMessage + 1) % taskMessages.length;
+        setCurrentMessage(nextMessageIndex);
+        
+        // Find category for the new message
+        let messageCount = 0;
+        for (const category of taskCategories) {
+          messageCount += category.messages.length;
+          if (nextMessageIndex < messageCount) {
+            setCurrentCategory(category.category);
+            break;
+          }
+        }
+        
         setIsMessageTransitioning(false);
       }, 500); // 500ms for fade out/in transition
       
@@ -80,9 +117,12 @@ const AITaskProgressBar = ({ progress, isComplete }: AITaskProgressBarProps) => 
 
   return (
     <div className="w-full flex flex-col items-center">
-      {/* Task message */}
+      {/* Category and Task message */}
       <div className={`mb-2 transition-opacity duration-500 ${isMessageTransitioning ? 'opacity-0' : 'opacity-100'}`}>
-        <div className="flex items-center justify-center">
+        <div className="flex flex-col items-center justify-center">
+          <span className="text-xs font-medium text-gray-500 mb-1">
+            {!isComplete ? `CATEGORY: ${currentCategory}` : "COMPLETE"}
+          </span>
           <span className="text-sm text-gray-600">{displayedMessage}</span>
         </div>
       </div>
@@ -123,6 +163,35 @@ const AITaskProgressBar = ({ progress, isComplete }: AITaskProgressBarProps) => 
         {/* Progress percentage */}
         <div className="absolute -right-8 top-0 text-xs text-gray-500">{progress}%</div>
       </div>
+      
+      {/* Category badges */}
+      {progress > 25 && (
+        <div className="flex flex-wrap justify-center gap-2 mt-1">
+          {taskCategories.map((category, index) => {
+            // Only show categories that have "started" based on progress
+            const categoryThreshold = (index / taskCategories.length) * 100;
+            if (progress < categoryThreshold) return null;
+            
+            const isActive = currentCategory === category.category && !isComplete;
+            const isCurrent = currentCategory === category.category;
+            
+            return (
+              <div 
+                key={category.category} 
+                className={`px-2 py-1 rounded-full text-xs ${
+                  isActive 
+                    ? 'bg-blue-100 text-blue-700 border border-blue-200' 
+                    : isCurrent && isComplete
+                    ? 'bg-green-100 text-green-700 border border-green-200'
+                    : 'bg-gray-100 text-gray-600 border border-gray-200'
+                } transition-all duration-300`}
+              >
+                {category.category}
+              </div>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 };
