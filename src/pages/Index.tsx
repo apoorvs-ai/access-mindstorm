@@ -6,8 +6,23 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Zap, Plus, User, BarChart, CheckCircle, XCircle, Edit, Clock, FileSearch, Shield, Cpu, Database } from "lucide-react";
+import { 
+  Zap, 
+  Plus, 
+  User, 
+  BarChart, 
+  CheckCircle, 
+  XCircle, 
+  Edit, 
+  Clock, 
+  FileSearch, 
+  Shield, 
+  Cpu, 
+  Database, 
+  Brain 
+} from "lucide-react";
 import { toast } from "sonner";
+import AIAgentProgressBar from "@/components/AIAgentProgressBar";
 
 const Index = () => {
   const [isReviewStarted, setIsReviewStarted] = useState(false);
@@ -192,7 +207,7 @@ const Index = () => {
                   {isReviewStarted ? (
                     <div className="space-y-4">
                       <div className="bg-indigo-50 p-4 rounded-md border border-indigo-100">
-                        <h3 className="font-medium text-indigo-800 mb-1 flex items-center">
+                        <h3 className="font-medium text-indigo-800 mb-3 flex items-center">
                           {isLoading ? (
                             <>
                               <FileSearch className="h-5 w-5 mr-2 text-indigo-600" />
@@ -207,15 +222,32 @@ const Index = () => {
                         </h3>
                         
                         {isLoading && (
-                          <div className="space-y-2">
-                            <p className="text-sm text-indigo-600">{currentAction}</p>
-                            <Progress value={progress} className="h-2" />
-                            <p className="text-xs text-right text-indigo-400">{progress}% complete</p>
+                          <div className="space-y-3">
+                            <div className="flex items-center justify-center mb-1 relative">
+                              <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center mb-1 animate-pulse">
+                                <Brain className="h-8 w-8 text-indigo-500" />
+                              </div>
+                              <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                                <div className="w-16 h-16 rounded-full border-4 border-indigo-400 border-t-transparent animate-spin"></div>
+                              </div>
+                            </div>
+                            
+                            <AIAgentProgressBar 
+                              progress={progress}
+                              isComplete={analysisComplete}
+                            />
                           </div>
                         )}
                         
                         {analysisComplete && (
-                          <p className="text-sm text-indigo-600">Analysis complete. Review recommendations below.</p>
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-center mb-1">
+                              <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
+                                <Brain className="h-8 w-8 text-green-500" />
+                              </div>
+                            </div>
+                            <p className="text-sm text-center text-indigo-600 font-medium">Analysis complete. Review recommendations below.</p>
+                          </div>
                         )}
                       </div>
                       
