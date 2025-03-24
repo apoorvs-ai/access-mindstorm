@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -97,28 +98,29 @@ const Index = () => {
         <p className="text-gray-500">Access Management and Review Dashboard</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="md:col-span-1">
-          <CardHeader>
+      <div className="grid grid-cols-1 md:grid-cols-12 gap-6">
+        {/* System Details Card - reduced height */}
+        <Card className="md:col-span-3">
+          <CardHeader className="pb-2">
             <CardTitle>System Details</CardTitle>
             <CardDescription>AWS Environment</CardDescription>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div>
+          <CardContent className="py-2">
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
                 <p className="text-sm font-medium">Owner</p>
                 <p className="text-sm text-gray-500">John Doe</p>
               </div>
-              <div>
+              <div className="flex justify-between items-center">
                 <p className="text-sm font-medium">Last Review</p>
                 <p className="text-sm text-gray-500">May 15, 2023</p>
               </div>
-              <div>
+              <div className="flex justify-between items-center">
                 <p className="text-sm font-medium">Status</p>
                 <Badge className="bg-green-500">Synced</Badge>
               </div>
               <Button 
-                className="w-full mt-6" 
+                className="w-full mt-4" 
                 onClick={handleStartReview}
                 disabled={isLoading}
               >
@@ -138,17 +140,17 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        <div className="md:col-span-3 space-y-6">
+        <div className="md:col-span-9 space-y-6">
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">User Status</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-40 flex items-center justify-center">
-                  <div className="w-32 h-32 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
-                    <div className="w-20 h-20 rounded-full bg-white flex items-center justify-center">
-                      <User className="h-10 w-10 text-indigo-500" />
+                <div className="h-32 flex items-center justify-center">
+                  <div className="w-24 h-24 rounded-full bg-gradient-to-r from-blue-400 to-indigo-500 flex items-center justify-center">
+                    <div className="w-16 h-16 rounded-full bg-white flex items-center justify-center">
+                      <User className="h-8 w-8 text-indigo-500" />
                     </div>
                   </div>
                   <div className="ml-6 space-y-1">
@@ -169,8 +171,8 @@ const Index = () => {
                 <CardTitle className="text-base">Access Trends</CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="h-40 flex items-center justify-center">
-                  <BarChart className="h-32 w-32 text-indigo-500" />
+                <div className="h-32 flex items-center justify-center">
+                  <BarChart className="h-24 w-24 text-indigo-500" />
                 </div>
               </CardContent>
             </Card>
@@ -241,7 +243,7 @@ const Index = () => {
                         )}
                       </div>
                       
-                      <div className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {usersReviewed.includes("Alice Smith") ? (
                           <UserCard 
                             name="Alice Smith" 
