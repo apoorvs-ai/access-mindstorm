@@ -1,10 +1,8 @@
-
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
 import { Skeleton } from "@/components/ui/skeleton";
 import { 
   Zap, 
@@ -55,7 +53,6 @@ const Index = () => {
       description: "Beginning comprehensive access pattern analysis"
     });
 
-    // Simulate the AI working through different stages
     const simulateProgress = () => {
       let currentProgress = 0;
       let messageIndex = 0;
@@ -68,8 +65,8 @@ const Index = () => {
           clearInterval(interval);
           setIsLoading(false);
           setAnalysisComplete(true);
-          toast.success("Analysis complete", {
-            description: "AI review has generated recommendations for all users"
+          toast.success("AI Agent Analysis complete", {
+            description: "All agents have completed their tasks and generated recommendations"
           });
         } else if (currentProgress > (messageIndex + 1) * 12 && messageIndex < loadingMessages.length - 1) {
           messageIndex++;
@@ -78,11 +75,10 @@ const Index = () => {
         
         setProgress(currentProgress);
 
-        // Gradually reveal users as they're "analyzed"
-        if (currentProgress > 30 && !usersReviewed.includes("Alice Smith")) {
+        if (currentProgress > 25 && !usersReviewed.includes("Alice Smith")) {
           setUsersReviewed(prev => [...prev, "Alice Smith"]);
         }
-        if (currentProgress > 60 && !usersReviewed.includes("Bob Johnson")) {
+        if (currentProgress > 55 && !usersReviewed.includes("Bob Johnson")) {
           setUsersReviewed(prev => [...prev, "Bob Johnson"]);
         }
         if (currentProgress > 85 && !usersReviewed.includes("Carol Williams")) {
@@ -96,15 +92,12 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50 p-6">
-      {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold">AWS System Overview</h1>
         <p className="text-gray-500">Access Management and Review Dashboard</p>
       </div>
 
-      {/* Main Content */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* System Info Card */}
         <Card className="md:col-span-1">
           <CardHeader>
             <CardTitle>System Details</CardTitle>
@@ -145,9 +138,7 @@ const Index = () => {
           </CardContent>
         </Card>
 
-        {/* Review Content */}
         <div className="md:col-span-3 space-y-6">
-          {/* Stats Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Card>
               <CardHeader className="pb-2">
@@ -185,7 +176,6 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* Access Reviews Tabs */}
           <Card>
             <CardHeader className="pb-0">
               <div className="flex justify-between items-center">
@@ -251,7 +241,6 @@ const Index = () => {
                         )}
                       </div>
                       
-                      {/* User Cards */}
                       <div className="space-y-4">
                         {usersReviewed.includes("Alice Smith") ? (
                           <UserCard 
@@ -328,7 +317,6 @@ const Index = () => {
   );
 };
 
-// User Card Component
 const UserCard = ({ 
   name, 
   role, 
@@ -342,7 +330,6 @@ const UserCard = ({
   lastLogin: string; 
   recommendation: "approve" | "revoke" | "modify"; 
 }) => {
-  // Define recommendation styling
   const recommendationConfig = {
     approve: { 
       icon: CheckCircle, 
@@ -415,7 +402,6 @@ const UserCard = ({
   );
 };
 
-// Skeleton loader for user cards
 const UserCardSkeleton = () => {
   return (
     <Card className="overflow-hidden border animate-pulse">
