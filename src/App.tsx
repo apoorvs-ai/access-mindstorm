@@ -14,7 +14,7 @@ const App = () => (
     <TooltipProvider delayDuration={0}>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
+      <BrowserRouter basename="/">
         <Routes>
           <Route path="/" element={<Index />} />
           <Route path="/index" element={<Navigate to="/" replace />} />
