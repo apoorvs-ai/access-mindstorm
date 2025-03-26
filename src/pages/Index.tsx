@@ -1,5 +1,6 @@
 
 import { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -104,7 +105,9 @@ const Index = () => {
       {/* Breadcrumb Navigation */}
       <div className="bg-gray-100 px-6 py-3 text-sm text-gray-600">
         <div className="max-w-7xl mx-auto">
-          Security / User Access Review / Access Review /
+          <Link to="/" className="hover:text-gray-800">Security</Link> / 
+          <Link to="/" className="hover:text-gray-800"> User Access Review</Link> / 
+          <Link to="/" className="hover:text-gray-800"> Access Review</Link> /
           <span className="font-semibold text-gray-800"> System Review For Jira</span>
         </div>
       </div>
@@ -290,7 +293,7 @@ const Index = () => {
       {/* Footer */}
       <div className="bg-white py-4 border-t mt-auto">
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center text-sm text-gray-500">
-          <div>© 2025 Akitra. All rights reserved. <a href="#" className="text-blue-500">EULA</a> & <a href="#" className="text-blue-500">Privacy Policy</a>.</div>
+          <div>© 2025 Akitra. All rights reserved. <Link to="/" className="text-blue-500">EULA</Link> & <Link to="/" className="text-blue-500">Privacy Policy</Link>.</div>
           <div>v23.13.1</div>
         </div>
       </div>
