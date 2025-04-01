@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -39,6 +38,22 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import UserActionToggle from "@/components/UserActionToggle";
+
+type UserAction = 'approve' | 'modify' | 'revoke' | null;
+
+interface User {
+  id: number;
+  name: string;
+  systemGroups: string[];
+  type: string;
+  employment: string;
+  access: string;
+  lastActive: string;
+  reviewRecommendation: string;
+  role: string;
+  userAction?: UserAction;
+}
 
 const Index = () => {
   const [isReviewStarted, setIsReviewStarted] = useState(false);
@@ -51,9 +66,7 @@ const Index = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers] = useState(0);
   const usersPerPage = 6;
-
-  // Mock user data for card layout
-  const mockUsers = [
+  const [users, setUsers] = useState<User[]>([
     { 
       id: 1, 
       name: "Alice Smith", 
@@ -63,7 +76,8 @@ const Index = () => {
       access: "Admin", 
       lastActive: "2 days ago",
       reviewRecommendation: "approve",
-      role: "DevOps Engineer"
+      role: "DevOps Engineer",
+      userAction: null
     },
     { 
       id: 2, 
@@ -74,7 +88,8 @@ const Index = () => {
       access: "ReadOnly", 
       lastActive: "45 days ago",
       reviewRecommendation: "revoke",
-      role: "Junior Developer"
+      role: "Junior Developer",
+      userAction: null
     },
     { 
       id: 3, 
@@ -85,7 +100,8 @@ const Index = () => {
       access: "Editor", 
       lastActive: "12 days ago",
       reviewRecommendation: "modify",
-      role: "Project Manager"
+      role: "Project Manager",
+      userAction: null
     },
     { 
       id: 4, 
@@ -96,7 +112,8 @@ const Index = () => {
       access: "Viewer", 
       lastActive: "30 days ago",
       reviewRecommendation: "",
-      role: "Sales Representative"
+      role: "Sales Representative",
+      userAction: null
     },
     { 
       id: 5, 
@@ -107,7 +124,8 @@ const Index = () => {
       access: "Editor", 
       lastActive: "5 days ago",
       reviewRecommendation: "",
-      role: "Marketing Specialist"
+      role: "Marketing Specialist",
+      userAction: null
     },
     { 
       id: 6, 
@@ -118,12 +136,12 @@ const Index = () => {
       access: "Developer", 
       lastActive: "1 day ago",
       reviewRecommendation: "",
-      role: "Frontend Developer"
+      role: "Frontend Developer",
+      userAction: null
     }
-  ];
+  ]);
 
-  // Filter users based on search query
-  const filteredUsers = mockUsers.filter(user => 
+  const filteredUsers = users.filter(user => 
     user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
     user.systemGroups.some(group => group.toLowerCase().includes(searchQuery.toLowerCase())) ||
     user.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -131,10 +149,33 @@ const Index = () => {
     user.access.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  // Get current users for pagination
   const indexOfLastUser = currentPage * usersPerPage;
   const indexOfFirstUser = indexOfLastUser - usersPerPage;
   const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+
+  const handleUserActionChange = (userId: number, action: UserAction) => {
+    setUsers(prev => prev.map(user => {
+      if (user.id === userId) {
+        return {
+          ...user,
+          userAction: action
+        };
+      }
+      return user;
+    }));
+
+    const actionMessages = {
+      approve: "Access approved for user",
+      modify: "Access modified for user",
+      revoke: "Access revoked for user"
+    };
+
+    if (action) {
+      toast.success(actionMessages[action], {
+        description: `User access has been updated`
+      });
+    }
+  };
 
   const loadingMessages = [
     "Scanning user permission matrices...",
@@ -196,9 +237,30 @@ const Index = () => {
     simulateProgress();
   };
 
+  const applyAllRecommendations = () => {
+    setUsers(prev => prev.map(user => {
+      if (user.reviewRecommendation) {
+        return {
+          ...user,
+          userAction: user.reviewRecommendation as UserAction
+        };
+      }
+      if (user.lastActive.includes('days') && parseInt(user.lastActive) > 30) {
+        return { ...user, userAction: 'revoke' };
+      } else if (user.access === 'Admin') {
+        return { ...user, userAction: 'modify' };
+      } else {
+        return { ...user, userAction: 'approve' };
+      }
+    }));
+
+    toast.success("All recommendations applied", {
+      description: "User access has been updated according to AI recommendations"
+    });
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Breadcrumb Navigation */}
       <div className="bg-gray-100 px-6 py-3 text-sm text-gray-600">
         <div className="max-w-7xl mx-auto">
           <Link to="/" className="hover:text-gray-800">Security</Link> / 
@@ -208,15 +270,11 @@ const Index = () => {
         </div>
       </div>
       
-      {/* Main Content */}
       <div className="max-w-7xl mx-auto p-6">
-        {/* System Review Header */}
         <h1 className="text-2xl font-bold mb-4">System Review For Jira</h1>
         
-        {/* System Info Card */}
         <Card className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4">
-            {/* Logo and System Info */}
             <div className="md:col-span-2 flex items-center justify-center md:justify-start">
               <div className="bg-blue-50 p-3 rounded-md">
                 <svg width="80" height="40" viewBox="0 0 80 40" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -227,14 +285,12 @@ const Index = () => {
               </div>
             </div>
             
-            {/* System Details */}
             <div className="md:col-span-2">
               <h3 className="font-bold">Jira</h3>
               <p className="text-sm text-gray-600">Service Management</p>
               <p className="text-sm text-gray-600">And CRM</p>
             </div>
             
-            {/* Progress */}
             <div className="md:col-span-2">
               <p className="text-sm font-medium mb-1">Progress</p>
               <div className="h-2.5 bg-gray-200 rounded-full w-full">
@@ -243,7 +299,6 @@ const Index = () => {
               <p className="text-right text-xs text-gray-600 mt-1">0/0</p>
             </div>
             
-            {/* Reviewer */}
             <div className="md:col-span-2">
               <p className="text-sm font-medium">Reviewer</p>
               <p className="text-gray-600">N/A</p>
@@ -252,7 +307,6 @@ const Index = () => {
               <p className="text-gray-600">03/31/2025</p>
             </div>
             
-            {/* Modified Permissions */}
             <div className="md:col-span-2">
               <p className="text-sm font-medium">Modified Permissions</p>
               <p className="text-gray-600">N/A</p>
@@ -261,7 +315,6 @@ const Index = () => {
               <p className="text-gray-600">04/07/2025</p>
             </div>
             
-            {/* Removed Permissions & Status */}
             <div className="md:col-span-2">
               <p className="text-sm font-medium">Removed Permissions</p>
               <p className="text-gray-600">N/A</p>
@@ -272,7 +325,6 @@ const Index = () => {
           </div>
         </Card>
         
-        {/* AI Progress Status when analysis is running */}
         {isReviewStarted && isLoading && (
           <Card className="mb-6">
             <CardHeader className="pb-2">
@@ -301,7 +353,6 @@ const Index = () => {
           </Card>
         )}
         
-        {/* Action Button if review not started */}
         {!isReviewStarted && (
           <Card className="mb-6">
             <CardContent className="p-6 flex justify-center">
@@ -326,7 +377,6 @@ const Index = () => {
           </Card>
         )}
 
-        {/* User Section with Card Layout */}
         <Card className="mb-6">
           <CardHeader className="pb-3">
             <div className="flex justify-between items-center">
@@ -338,7 +388,6 @@ const Index = () => {
             </div>
           </CardHeader>
           <CardContent>
-            {/* Search and Filter */}
             <div className="flex flex-col md:flex-row gap-4 mb-6">
               <div className="relative flex-1">
                 <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
@@ -361,7 +410,6 @@ const Index = () => {
               </Button>
             </div>
 
-            {/* Review Status Banner */}
             {isReviewStarted && analysisComplete && (
               <div className="bg-green-50 border border-green-100 p-4 rounded-md mb-6 flex items-center">
                 <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
@@ -371,7 +419,7 @@ const Index = () => {
                 </div>
                 <Button 
                   className="ml-auto"
-                  onClick={() => toast.success("Recommendations applied successfully")}
+                  onClick={applyAllRecommendations}
                   size="sm"
                 >
                   Apply All Recommendations
@@ -379,16 +427,13 @@ const Index = () => {
               </div>
             )}
 
-            {/* Card Grid Layout */}
             {filteredUsers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {currentUsers.map((user) => {
-                  // Determine if this user is being processed by AI
                   const isBeingReviewed = isReviewStarted && isLoading && 
                     !usersReviewed.includes(user.name) && 
                     usersReviewed.length > 0;
                   
-                  // Determine if this user is reviewed by AI
                   const isReviewed = isReviewStarted && 
                     (usersReviewed.includes(user.name) || analysisComplete);
                   
@@ -449,7 +494,6 @@ const Index = () => {
                           </div>
                         </div>
                         
-                        {/* AI Recommendation Section */}
                         {isReviewed && userRecommendation && (
                           <div className={`mb-3 p-2 rounded text-sm flex items-center ${
                             userRecommendation === "approve" ? "bg-green-50 text-green-700" :
@@ -464,7 +508,6 @@ const Index = () => {
                           </div>
                         )}
                         
-                        {/* Loading indicator */}
                         {isBeingReviewed && (
                           <div className="mb-3 p-2 bg-indigo-50 rounded text-sm flex items-center text-indigo-700">
                             <div className="animate-spin h-4 w-4 mr-2 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
@@ -473,9 +516,10 @@ const Index = () => {
                         )}
                         
                         <div className="flex mt-2 pt-2 border-t justify-end gap-2">
-                          <Button size="sm" variant="ghost" className="h-8 px-2">Revoke</Button>
-                          <Button size="sm" variant="ghost" className="h-8 px-2">Modify</Button>
-                          <Button size="sm" variant="outline" className="h-8 px-2">Approve</Button>
+                          <UserActionToggle 
+                            value={user.userAction} 
+                            onValueChange={(action) => handleUserActionChange(user.id, action)} 
+                          />
                         </div>
                       </CardContent>
                     </Card>
@@ -492,7 +536,6 @@ const Index = () => {
               </div>
             )}
 
-            {/* Pagination */}
             <div className="mt-6 flex items-center justify-between">
               <div className="text-sm text-gray-500">
                 Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length}
@@ -514,7 +557,6 @@ const Index = () => {
                     </PaginationLink>
                   </PaginationItem>
                   
-                  {/* Page numbers */}
                   {Array.from({ length: Math.ceil(filteredUsers.length / usersPerPage) }).map((_, idx) => (
                     <PaginationItem key={idx}>
                       <PaginationLink 
@@ -549,7 +591,6 @@ const Index = () => {
         </Card>
       </div>
       
-      {/* Footer */}
       <div className="bg-white py-4 border-t mt-auto">
         <div className="max-w-7xl mx-auto px-6 flex justify-between items-center text-sm text-gray-500">
           <div>© 2025 Akitra. All rights reserved. <Link to="/" className="text-blue-500">EULA</Link> & <Link to="/" className="text-blue-500">Privacy Policy</Link>.</div>
