@@ -61,7 +61,9 @@ const Index = () => {
       type: "Employee", 
       employment: "Full Time", 
       access: "Admin", 
-      lastActive: "2 days ago"
+      lastActive: "2 days ago",
+      reviewRecommendation: "approve",
+      role: "DevOps Engineer"
     },
     { 
       id: 2, 
@@ -70,7 +72,9 @@ const Index = () => {
       type: "Contractor", 
       employment: "Part Time", 
       access: "ReadOnly", 
-      lastActive: "45 days ago"
+      lastActive: "45 days ago",
+      reviewRecommendation: "revoke",
+      role: "Junior Developer"
     },
     { 
       id: 3, 
@@ -79,7 +83,9 @@ const Index = () => {
       type: "Employee", 
       employment: "Full Time", 
       access: "Editor", 
-      lastActive: "12 days ago"
+      lastActive: "12 days ago",
+      reviewRecommendation: "modify",
+      role: "Project Manager"
     },
     { 
       id: 4, 
@@ -88,7 +94,9 @@ const Index = () => {
       type: "Contractor", 
       employment: "Temporary", 
       access: "Viewer", 
-      lastActive: "30 days ago"
+      lastActive: "30 days ago",
+      reviewRecommendation: "",
+      role: "Sales Representative"
     },
     { 
       id: 5, 
@@ -97,7 +105,9 @@ const Index = () => {
       type: "Employee", 
       employment: "Full Time", 
       access: "Editor", 
-      lastActive: "5 days ago"
+      lastActive: "5 days ago",
+      reviewRecommendation: "",
+      role: "Marketing Specialist"
     },
     { 
       id: 6, 
@@ -106,7 +116,9 @@ const Index = () => {
       type: "Contractor", 
       employment: "Part Time", 
       access: "Developer", 
-      lastActive: "1 day ago"
+      lastActive: "1 day ago",
+      reviewRecommendation: "",
+      role: "Frontend Developer"
     }
   ];
 
@@ -260,95 +272,36 @@ const Index = () => {
           </div>
         </Card>
         
-        {/* AI Access Review Section */}
-        {isReviewStarted && (
+        {/* AI Progress Status when analysis is running */}
+        {isReviewStarted && isLoading && (
           <Card className="mb-6">
             <CardHeader className="pb-2">
               <CardTitle>AI Access Review Progress</CardTitle>
-              <CardDescription>
-                {isLoading ? "Processing access patterns and detecting anomalies..." : "AI analysis complete"}
-              </CardDescription>
+              <CardDescription>Processing access patterns and detecting anomalies...</CardDescription>
             </CardHeader>
             <CardContent>
-              {isLoading && (
-                <div className="bg-indigo-50 p-4 rounded-md border border-indigo-100 mb-4">
-                  <div className="flex justify-center mb-4">
-                    <div className="relative">
-                      <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center">
-                        <Brain className="h-8 w-8 text-indigo-500" />
-                      </div>
-                      <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
-                        <div className="w-16 h-16 rounded-full border-4 border-indigo-400 border-t-transparent animate-spin"></div>
-                      </div>
+              <div className="bg-indigo-50 p-4 rounded-md border border-indigo-100 mb-4">
+                <div className="flex justify-center mb-4">
+                  <div className="relative">
+                    <div className="w-16 h-16 rounded-full bg-indigo-100 flex items-center justify-center">
+                      <Brain className="h-8 w-8 text-indigo-500" />
+                    </div>
+                    <div className="absolute top-0 left-0 w-full h-full flex items-center justify-center">
+                      <div className="w-16 h-16 rounded-full border-4 border-indigo-400 border-t-transparent animate-spin"></div>
                     </div>
                   </div>
-                  
-                  <AITaskProgressBar 
-                    progress={progress}
-                    isComplete={analysisComplete}
-                  />
                 </div>
-              )}
-              
-              {analysisComplete && (
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center">
-                    <CheckCircle className="h-8 w-8 text-green-500" />
-                  </div>
-                </div>
-              )}
-              
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {usersReviewed.includes("Alice Smith") ? (
-                  <UserCard 
-                    name="Alice Smith" 
-                    role="DevOps Engineer" 
-                    accessType="Admin" 
-                    lastLogin="2 days ago" 
-                    recommendation="approve"
-                  />
-                ) : isLoading && (
-                  <UserCardSkeleton />
-                )}
                 
-                {usersReviewed.includes("Bob Johnson") ? (
-                  <UserCard 
-                    name="Bob Johnson" 
-                    role="Junior Developer" 
-                    accessType="ReadOnly" 
-                    lastLogin="45 days ago" 
-                    recommendation="revoke"
-                  />
-                ) : isLoading && progress > 30 && (
-                  <UserCardSkeleton />
-                )}
-                
-                {usersReviewed.includes("Carol Williams") ? (
-                  <UserCard 
-                    name="Carol Williams" 
-                    role="Project Manager" 
-                    accessType="Editor" 
-                    lastLogin="12 days ago" 
-                    recommendation="modify"
-                  />
-                ) : isLoading && progress > 60 && (
-                  <UserCardSkeleton />
-                )}
+                <AITaskProgressBar 
+                  progress={progress}
+                  isComplete={analysisComplete}
+                />
               </div>
-              
-              {analysisComplete && (
-                <Button 
-                  className="w-full mt-4"
-                  onClick={() => toast.success("Recommendations applied successfully")}
-                >
-                  <CheckCircle className="h-4 w-4 mr-2" />
-                  Apply AI Recommendations
-                </Button>
-              )}
             </CardContent>
           </Card>
         )}
         
+        {/* Action Button if review not started */}
         {!isReviewStarted && (
           <Card className="mb-6">
             <CardContent className="p-6 flex justify-center">
@@ -408,58 +361,126 @@ const Index = () => {
               </Button>
             </div>
 
+            {/* Review Status Banner */}
+            {isReviewStarted && analysisComplete && (
+              <div className="bg-green-50 border border-green-100 p-4 rounded-md mb-6 flex items-center">
+                <CheckCircle className="h-5 w-5 text-green-500 mr-3" />
+                <div>
+                  <h3 className="font-medium text-green-700">AI Access Review Complete</h3>
+                  <p className="text-green-600 text-sm">All users have been analyzed and recommendations are available</p>
+                </div>
+                <Button 
+                  className="ml-auto"
+                  onClick={() => toast.success("Recommendations applied successfully")}
+                  size="sm"
+                >
+                  Apply All Recommendations
+                </Button>
+              </div>
+            )}
+
             {/* Card Grid Layout */}
             {filteredUsers.length > 0 ? (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {currentUsers.map((user) => (
-                  <Card key={user.id} className="overflow-hidden hover:shadow-md transition-shadow">
-                    <div className="h-1 bg-blue-400"></div>
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between mb-3">
-                        <div className="flex items-center">
-                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                            <User className="h-5 w-5 text-blue-600" />
+                {currentUsers.map((user) => {
+                  // Determine if this user is being processed by AI
+                  const isBeingReviewed = isReviewStarted && isLoading && 
+                    !usersReviewed.includes(user.name) && 
+                    usersReviewed.length > 0;
+                  
+                  // Determine if this user is reviewed by AI
+                  const isReviewed = isReviewStarted && 
+                    (usersReviewed.includes(user.name) || analysisComplete);
+                  
+                  const userRecommendation = isReviewed 
+                    ? user.reviewRecommendation || (user.lastActive.includes("days") && parseInt(user.lastActive) > 30 
+                        ? "revoke" 
+                        : user.access === "Admin" 
+                            ? "modify" 
+                            : "approve")
+                    : "";
+                  
+                  return (
+                    <Card key={user.id} className={`overflow-hidden hover:shadow-md transition-shadow ${
+                      isBeingReviewed ? "animate-pulse" : ""
+                    }`}>
+                      {isReviewed && userRecommendation && (
+                        <div className={`h-1 ${
+                          userRecommendation === "approve" ? "bg-green-500" :
+                          userRecommendation === "revoke" ? "bg-red-500" : "bg-orange-500"
+                        }`}></div>
+                      )}
+                      {!isReviewed && <div className="h-1 bg-blue-400"></div>}
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
+                          <div className="flex items-center">
+                            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                              <User className="h-5 w-5 text-blue-600" />
+                            </div>
+                            <div>
+                              <h3 className="font-medium text-sm">{user.name}</h3>
+                              <p className="text-xs text-gray-500">{user.role || user.employment}</p>
+                            </div>
                           </div>
-                          <div>
-                            <h3 className="font-medium text-sm">{user.name}</h3>
-                            <p className="text-xs text-gray-500">{user.employment}</p>
+                          <Badge variant={user.access === "Admin" ? "destructive" : "default"} className="text-xs">
+                            {user.access}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="bg-gray-50 p-2 rounded text-xs">
+                            <span className="block text-gray-500">Type</span>
+                            <span className="font-medium">{user.type}</span>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded text-xs">
+                            <span className="block text-gray-500">Last Active</span>
+                            <span className="font-medium">{user.lastActive}</span>
                           </div>
                         </div>
-                        <Badge variant={user.access === "Admin" ? "destructive" : "default"} className="text-xs">
-                          {user.access}
-                        </Badge>
-                      </div>
-                      
-                      <div className="grid grid-cols-2 gap-2 mb-3">
-                        <div className="bg-gray-50 p-2 rounded text-xs">
-                          <span className="block text-gray-500">Type</span>
-                          <span className="font-medium">{user.type}</span>
+                        
+                        <div className="text-xs mb-3">
+                          <span className="text-gray-500 block mb-1">System Groups</span>
+                          <div className="flex flex-wrap gap-1">
+                            {user.systemGroups.map((group, idx) => (
+                              <Badge key={idx} variant="outline" className="bg-gray-100 font-normal">
+                                {group}
+                              </Badge>
+                            ))}
+                          </div>
                         </div>
-                        <div className="bg-gray-50 p-2 rounded text-xs">
-                          <span className="block text-gray-500">Last Active</span>
-                          <span className="font-medium">{user.lastActive}</span>
+                        
+                        {/* AI Recommendation Section */}
+                        {isReviewed && userRecommendation && (
+                          <div className={`mb-3 p-2 rounded text-sm flex items-center ${
+                            userRecommendation === "approve" ? "bg-green-50 text-green-700" :
+                            userRecommendation === "revoke" ? "bg-red-50 text-red-700" : "bg-orange-50 text-orange-700"
+                          }`}>
+                            {userRecommendation === "approve" && <CheckCircle className="h-4 w-4 mr-2" />}
+                            {userRecommendation === "revoke" && <XCircle className="h-4 w-4 mr-2" />}
+                            {userRecommendation === "modify" && <Edit className="h-4 w-4 mr-2" />}
+                            {userRecommendation === "approve" && "Maintain current permissions"}
+                            {userRecommendation === "revoke" && "Revoke access privileges"}
+                            {userRecommendation === "modify" && "Modify access rights"}
+                          </div>
+                        )}
+                        
+                        {/* Loading indicator */}
+                        {isBeingReviewed && (
+                          <div className="mb-3 p-2 bg-indigo-50 rounded text-sm flex items-center text-indigo-700">
+                            <div className="animate-spin h-4 w-4 mr-2 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+                            Analyzing access patterns...
+                          </div>
+                        )}
+                        
+                        <div className="flex mt-2 pt-2 border-t justify-end gap-2">
+                          <Button size="sm" variant="ghost" className="h-8 px-2">Revoke</Button>
+                          <Button size="sm" variant="ghost" className="h-8 px-2">Modify</Button>
+                          <Button size="sm" variant="outline" className="h-8 px-2">Approve</Button>
                         </div>
-                      </div>
-                      
-                      <div className="text-xs mb-3">
-                        <span className="text-gray-500 block mb-1">System Groups</span>
-                        <div className="flex flex-wrap gap-1">
-                          {user.systemGroups.map((group, idx) => (
-                            <Badge key={idx} variant="outline" className="bg-gray-100 font-normal">
-                              {group}
-                            </Badge>
-                          ))}
-                        </div>
-                      </div>
-                      
-                      <div className="flex mt-2 pt-2 border-t justify-end gap-2">
-                        <Button size="sm" variant="ghost" className="h-8 px-2">Revoke</Button>
-                        <Button size="sm" variant="ghost" className="h-8 px-2">Modify</Button>
-                        <Button size="sm" variant="outline" className="h-8 px-2">Approve</Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
+                      </CardContent>
+                    </Card>
+                  );
+                })}
               </div>
             ) : (
               <div className="bg-gray-50 p-8 rounded-md text-center">
@@ -480,14 +501,14 @@ const Index = () => {
               <Pagination>
                 <PaginationContent>
                   <PaginationItem>
-                    <PaginationLink onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+                    <PaginationLink onClick={() => setCurrentPage(1)} isActive={false}>
                       <ChevronsLeft className="h-4 w-4" />
                     </PaginationLink>
                   </PaginationItem>
                   <PaginationItem>
                     <PaginationLink 
                       onClick={() => setCurrentPage(current => Math.max(current - 1, 1))} 
-                      disabled={currentPage === 1}
+                      isActive={false}
                     >
                       <ChevronLeft className="h-4 w-4" />
                     </PaginationLink>
@@ -508,7 +529,7 @@ const Index = () => {
                   <PaginationItem>
                     <PaginationLink 
                       onClick={() => setCurrentPage(current => Math.min(current + 1, Math.ceil(filteredUsers.length / usersPerPage)))}
-                      disabled={currentPage === Math.ceil(filteredUsers.length / usersPerPage)}
+                      isActive={false}
                     >
                       <ChevronRight className="h-4 w-4" />
                     </PaginationLink>
@@ -516,7 +537,7 @@ const Index = () => {
                   <PaginationItem>
                     <PaginationLink 
                       onClick={() => setCurrentPage(Math.ceil(filteredUsers.length / usersPerPage))}
-                      disabled={currentPage === Math.ceil(filteredUsers.length / usersPerPage)}
+                      isActive={false}
                     >
                       <ChevronsRight className="h-4 w-4" />
                     </PaginationLink>
@@ -536,118 +557,6 @@ const Index = () => {
         </div>
       </div>
     </div>
-  );
-};
-
-const UserCard = ({ 
-  name, 
-  role, 
-  accessType, 
-  lastLogin, 
-  recommendation 
-}: { 
-  name: string; 
-  role: string; 
-  accessType: string; 
-  lastLogin: string; 
-  recommendation: "approve" | "revoke" | "modify"; 
-}) => {
-  const recommendationConfig = {
-    approve: { 
-      icon: CheckCircle, 
-      color: "text-green-600", 
-      bg: "bg-green-50", 
-      border: "border-green-100",
-      badge: "bg-green-500"
-    },
-    revoke: { 
-      icon: XCircle, 
-      color: "text-red-600", 
-      bg: "bg-red-50", 
-      border: "border-red-100",
-      badge: "bg-red-500" 
-    },
-    modify: { 
-      icon: Edit, 
-      color: "text-orange-600", 
-      bg: "bg-orange-50", 
-      border: "border-orange-100",
-      badge: "bg-orange-500" 
-    }
-  };
-  
-  const config = recommendationConfig[recommendation];
-  const RecommendationIcon = config.icon;
-  
-  return (
-    <Card className={`overflow-hidden border ${config.border} animate-fade-in`}>
-      <div className={`h-2 ${config.badge.replace('bg-', 'bg-')}`}></div>
-      <CardContent className="p-4 pt-5">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center">
-            <div className="w-12 h-12 rounded-full bg-gradient-to-r from-indigo-400 to-purple-500 flex items-center justify-center">
-              <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-                <User className="h-6 w-6 text-indigo-500" />
-              </div>
-            </div>
-            <div className="ml-3">
-              <h3 className="font-medium">{name}</h3>
-              <p className="text-sm text-gray-600">{role}</p>
-            </div>
-          </div>
-          
-          <Badge className={config.badge}>
-            {recommendation.charAt(0).toUpperCase() + recommendation.slice(1)}
-          </Badge>
-        </div>
-        
-        <div className="mt-4 grid grid-cols-2 gap-2 text-sm">
-          <div className="bg-gray-50 p-2 rounded">
-            <span className="text-gray-500 block text-xs">Access Level</span>
-            <span className="font-medium">{accessType}</span>
-          </div>
-          <div className="bg-gray-50 p-2 rounded">
-            <span className="text-gray-500 block text-xs">Last Login</span>
-            <span className="font-medium">{lastLogin}</span>
-          </div>
-        </div>
-        
-        <div className={`mt-4 flex items-center ${config.color} p-2 rounded ${config.bg}`}>
-          <RecommendationIcon className="h-4 w-4 mr-2" />
-          <span className="text-sm font-medium">
-            {recommendation === "approve" ? "Maintain current permissions" : 
-             recommendation === "revoke" ? "Revoke access privileges" : "Modify access rights"}
-          </span>
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-
-const UserCardSkeleton = () => {
-  return (
-    <Card className="overflow-hidden border animate-pulse">
-      <div className="h-2 bg-gray-200"></div>
-      <CardContent className="p-4 pt-5">
-        <div className="flex justify-between items-start">
-          <div className="flex items-center">
-            <Skeleton className="w-12 h-12 rounded-full" />
-            <div className="ml-3">
-              <Skeleton className="h-5 w-32 mb-1" />
-              <Skeleton className="h-4 w-24" />
-            </div>
-          </div>
-          <Skeleton className="h-5 w-16 rounded-full" />
-        </div>
-        
-        <div className="mt-4 grid grid-cols-2 gap-2">
-          <Skeleton className="h-14 rounded" />
-          <Skeleton className="h-14 rounded" />
-        </div>
-        
-        <Skeleton className="mt-4 h-10 rounded" />
-      </CardContent>
-    </Card>
   );
 };
 
