@@ -30,6 +30,15 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import AITaskProgressBar from "@/components/AITaskProgressBar";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 
 const Index = () => {
   const [isReviewStarted, setIsReviewStarted] = useState(false);
@@ -39,6 +48,81 @@ const Index = () => {
   const [usersReviewed, setUsersReviewed] = useState<string[]>([]);
   const [analysisComplete, setAnalysisComplete] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalUsers] = useState(0);
+  const usersPerPage = 6;
+
+  // Mock user data for card layout
+  const mockUsers = [
+    { 
+      id: 1, 
+      name: "Alice Smith", 
+      systemGroups: ["Administrators", "Developers"], 
+      type: "Employee", 
+      employment: "Full Time", 
+      access: "Admin", 
+      lastActive: "2 days ago"
+    },
+    { 
+      id: 2, 
+      name: "Bob Johnson", 
+      systemGroups: ["Support"], 
+      type: "Contractor", 
+      employment: "Part Time", 
+      access: "ReadOnly", 
+      lastActive: "45 days ago"
+    },
+    { 
+      id: 3, 
+      name: "Carol Williams", 
+      systemGroups: ["Project Managers"], 
+      type: "Employee", 
+      employment: "Full Time", 
+      access: "Editor", 
+      lastActive: "12 days ago"
+    },
+    { 
+      id: 4, 
+      name: "David Brown", 
+      systemGroups: ["Sales"], 
+      type: "Contractor", 
+      employment: "Temporary", 
+      access: "Viewer", 
+      lastActive: "30 days ago"
+    },
+    { 
+      id: 5, 
+      name: "Eve Jones", 
+      systemGroups: ["Marketing"], 
+      type: "Employee", 
+      employment: "Full Time", 
+      access: "Editor", 
+      lastActive: "5 days ago"
+    },
+    { 
+      id: 6, 
+      name: "Frank Miller", 
+      systemGroups: ["Developers"], 
+      type: "Contractor", 
+      employment: "Part Time", 
+      access: "Developer", 
+      lastActive: "1 day ago"
+    }
+  ];
+
+  // Filter users based on search query
+  const filteredUsers = mockUsers.filter(user => 
+    user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.systemGroups.some(group => group.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    user.type.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.employment.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    user.access.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  // Get current users for pagination
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = filteredUsers.slice(indexOfFirstUser, indexOfLastUser);
 
   const loadingMessages = [
     "Scanning user permission matrices...",
@@ -153,7 +237,7 @@ const Index = () => {
               <p className="text-gray-600">N/A</p>
               
               <p className="text-sm font-medium mt-3">Created Date</p>
-              <p className="text-gray-600">03/24/2025</p>
+              <p className="text-gray-600">03/31/2025</p>
             </div>
             
             {/* Modified Permissions */}
@@ -162,7 +246,7 @@ const Index = () => {
               <p className="text-gray-600">N/A</p>
               
               <p className="text-sm font-medium mt-3">Due Date</p>
-              <p className="text-gray-600">03/30/2025</p>
+              <p className="text-gray-600">04/07/2025</p>
             </div>
             
             {/* Removed Permissions & Status */}
@@ -176,7 +260,7 @@ const Index = () => {
           </div>
         </Card>
         
-        {/* Review Actions */}
+        {/* AI Access Review Section */}
         {isReviewStarted && (
           <Card className="mb-6">
             <CardHeader className="pb-2">
@@ -288,6 +372,160 @@ const Index = () => {
             </CardContent>
           </Card>
         )}
+
+        {/* User Section with Card Layout */}
+        <Card className="mb-6">
+          <CardHeader className="pb-3">
+            <div className="flex justify-between items-center">
+              <CardTitle>User</CardTitle>
+              <Button size="sm" variant="outline">
+                <Plus className="h-4 w-4 mr-2" />
+                Add User
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {/* Search and Filter */}
+            <div className="flex flex-col md:flex-row gap-4 mb-6">
+              <div className="relative flex-1">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-gray-500" />
+                <Input
+                  type="text"
+                  placeholder="Search users..."
+                  className="pl-9"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button variant="outline" size="icon" className="h-10 w-10">
+                <Filter className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" className="w-full md:w-auto">
+                {filteredUsers.length} Results
+              </Button>
+              <Button variant="secondary" className="w-full md:w-auto">
+                Completed
+              </Button>
+            </div>
+
+            {/* Card Grid Layout */}
+            {filteredUsers.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {currentUsers.map((user) => (
+                  <Card key={user.id} className="overflow-hidden hover:shadow-md transition-shadow">
+                    <div className="h-1 bg-blue-400"></div>
+                    <CardContent className="p-4">
+                      <div className="flex items-start justify-between mb-3">
+                        <div className="flex items-center">
+                          <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                            <User className="h-5 w-5 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-medium text-sm">{user.name}</h3>
+                            <p className="text-xs text-gray-500">{user.employment}</p>
+                          </div>
+                        </div>
+                        <Badge variant={user.access === "Admin" ? "destructive" : "default"} className="text-xs">
+                          {user.access}
+                        </Badge>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 mb-3">
+                        <div className="bg-gray-50 p-2 rounded text-xs">
+                          <span className="block text-gray-500">Type</span>
+                          <span className="font-medium">{user.type}</span>
+                        </div>
+                        <div className="bg-gray-50 p-2 rounded text-xs">
+                          <span className="block text-gray-500">Last Active</span>
+                          <span className="font-medium">{user.lastActive}</span>
+                        </div>
+                      </div>
+                      
+                      <div className="text-xs mb-3">
+                        <span className="text-gray-500 block mb-1">System Groups</span>
+                        <div className="flex flex-wrap gap-1">
+                          {user.systemGroups.map((group, idx) => (
+                            <Badge key={idx} variant="outline" className="bg-gray-100 font-normal">
+                              {group}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                      
+                      <div className="flex mt-2 pt-2 border-t justify-end gap-2">
+                        <Button size="sm" variant="ghost" className="h-8 px-2">Revoke</Button>
+                        <Button size="sm" variant="ghost" className="h-8 px-2">Modify</Button>
+                        <Button size="sm" variant="outline" className="h-8 px-2">Approve</Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            ) : (
+              <div className="bg-gray-50 p-8 rounded-md text-center">
+                <div className="flex justify-center mb-4">
+                  <FileSearch className="h-12 w-12 text-gray-400" />
+                </div>
+                <h3 className="text-lg font-medium text-gray-700">No Data!</h3>
+                <p className="text-gray-500">No users match your search criteria</p>
+              </div>
+            )}
+
+            {/* Pagination */}
+            <div className="mt-6 flex items-center justify-between">
+              <div className="text-sm text-gray-500">
+                Showing {indexOfFirstUser + 1} to {Math.min(indexOfLastUser, filteredUsers.length)} of {filteredUsers.length}
+              </div>
+              
+              <Pagination>
+                <PaginationContent>
+                  <PaginationItem>
+                    <PaginationLink onClick={() => setCurrentPage(1)} disabled={currentPage === 1}>
+                      <ChevronsLeft className="h-4 w-4" />
+                    </PaginationLink>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationLink 
+                      onClick={() => setCurrentPage(current => Math.max(current - 1, 1))} 
+                      disabled={currentPage === 1}
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                    </PaginationLink>
+                  </PaginationItem>
+                  
+                  {/* Page numbers */}
+                  {Array.from({ length: Math.ceil(filteredUsers.length / usersPerPage) }).map((_, idx) => (
+                    <PaginationItem key={idx}>
+                      <PaginationLink 
+                        onClick={() => setCurrentPage(idx + 1)} 
+                        isActive={currentPage === idx + 1}
+                      >
+                        {idx + 1}
+                      </PaginationLink>
+                    </PaginationItem>
+                  ))}
+                  
+                  <PaginationItem>
+                    <PaginationLink 
+                      onClick={() => setCurrentPage(current => Math.min(current + 1, Math.ceil(filteredUsers.length / usersPerPage)))}
+                      disabled={currentPage === Math.ceil(filteredUsers.length / usersPerPage)}
+                    >
+                      <ChevronRight className="h-4 w-4" />
+                    </PaginationLink>
+                  </PaginationItem>
+                  <PaginationItem>
+                    <PaginationLink 
+                      onClick={() => setCurrentPage(Math.ceil(filteredUsers.length / usersPerPage))}
+                      disabled={currentPage === Math.ceil(filteredUsers.length / usersPerPage)}
+                    >
+                      <ChevronsRight className="h-4 w-4" />
+                    </PaginationLink>
+                  </PaginationItem>
+                </PaginationContent>
+              </Pagination>
+            </div>
+          </CardContent>
+        </Card>
       </div>
       
       {/* Footer */}
