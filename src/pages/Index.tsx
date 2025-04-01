@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -55,7 +56,7 @@ import {
   Search
 } from "lucide-react";
 import { toast } from "sonner";
-import AITaskProgressBar from "@/components/AITaskProgressBar";
+import AIAgentProgressBar from "@/components/AIAgentProgressBar";
 import UserActionToggle from "@/components/UserActionToggle";
 
 type UserAction = 'approve' | 'modify' | 'revoke' | null;
@@ -375,9 +376,10 @@ const Index = () => {
                   </div>
                 </div>
                 
-                <AITaskProgressBar 
+                <AIAgentProgressBar 
                   progress={progress}
                   isComplete={analysisComplete}
+                  currentAction={currentAction}
                 />
               </div>
             </CardContent>

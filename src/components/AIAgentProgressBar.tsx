@@ -1,9 +1,8 @@
 
 import { useState, useEffect } from "react";
 import { Progress } from "@/components/ui/progress";
-import { Slider } from "@/components/ui/slider";
 import { Badge } from "@/components/ui/badge";
-import { AlertCircle, Brain, Database, Fingerprint, Shield, Sparkles } from "lucide-react";
+import { AlertCircle, Brain, Database, Shield, Sparkles } from "lucide-react";
 
 type Agent = {
   name: string;
@@ -16,9 +15,10 @@ type Agent = {
 interface AIAgentProgressBarProps {
   progress: number;
   isComplete: boolean;
+  currentAction?: string;
 }
 
-const AIAgentProgressBar = ({ progress, isComplete }: AIAgentProgressBarProps) => {
+const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProgressBarProps) => {
   const [currentAgent, setCurrentAgent] = useState(0);
   const [currentMessage, setCurrentMessage] = useState(0);
   const [isMessageTransitioning, setIsMessageTransitioning] = useState(false);
@@ -32,10 +32,10 @@ const AIAgentProgressBar = ({ progress, isComplete }: AIAgentProgressBarProps) =
       color: "text-blue-500",
       specialty: "Data gathering & audit logging",
       messages: [
+        "scanning user permission matrices...",
         "fetching system access logs...",
         "analyzing user login patterns...",
-        "indexing 3,452 access entries...",
-        "compiling access history report..."
+        "syncing user data from HRMS..."
       ]
     },
     {
@@ -45,8 +45,8 @@ const AIAgentProgressBar = ({ progress, isComplete }: AIAgentProgressBarProps) =
       specialty: "Access behavior analysis",
       messages: [
         "detecting anomalies in login behavior...",
-        "correlating access patterns...",
-        "flagging high-risk users for review...",
+        "identifying orphaned accounts...",
+        "evaluating least privilege compliance...",
         "calculating behavior risk scores..."
       ]
     },
@@ -57,9 +57,9 @@ const AIAgentProgressBar = ({ progress, isComplete }: AIAgentProgressBarProps) =
       specialty: "Policy & recommendations",
       messages: [
         "reviewing permissions against compliance rules...",
-        "preparing role-based access recommendations...",
-        "validating access decisions with policy alignment...",
-        "generating permission optimization plan..."
+        "comparing against role-based access controls...",
+        "validating access decisions...",
+        "generating permission recommendations..."
       ]
     },
     {
@@ -111,7 +111,7 @@ const AIAgentProgressBar = ({ progress, isComplete }: AIAgentProgressBarProps) =
     
     if (isMessageTransitioning) return;
     
-    const fullMessage = agent.messages[currentMessage];
+    const fullMessage = currentAction || agent.messages[currentMessage];
     let currentIndex = 0;
     setDisplayedMessage("");
     
@@ -125,7 +125,7 @@ const AIAgentProgressBar = ({ progress, isComplete }: AIAgentProgressBarProps) =
     }, 30);
     
     return () => clearInterval(typingInterval);
-  }, [currentAgent, currentMessage, isMessageTransitioning, isComplete, agent.messages]);
+  }, [currentAgent, currentMessage, isMessageTransitioning, isComplete, agent.messages, currentAction]);
 
   // Get a color style based on progress
   const getProgressColor = () => {
@@ -206,6 +206,47 @@ const AIAgentProgressBar = ({ progress, isComplete }: AIAgentProgressBarProps) =
                 <AgentBadgeIcon className="h-3 w-3 mr-1" /> 
                 {a.name} {Math.min(Math.floor(agentProgress), 100)}%
               </Badge>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Task steps with status indicators */}
+      {progress > 10 && (
+        <div className="w-full mt-4 grid grid-cols-1 md:grid-cols-3 gap-3">
+          {[
+            { name: "Syncing User Data", icon: Database, threshold: 15 },
+            { name: "Access Analysis", icon: AlertCircle, threshold: 40 },
+            { name: "Security Assessment", icon: Shield, threshold: 70 }
+          ].map((step, index) => {
+            const StepIcon = step.icon;
+            const isActive = progress >= step.threshold;
+            const isComplete = progress >= step.threshold + 20;
+            
+            return (
+              <div key={step.name} className={`flex items-center p-2 rounded-md border ${
+                isComplete ? 'border-green-200 bg-green-50' : 
+                isActive ? 'border-blue-200 bg-blue-50 animate-pulse' : 
+                'border-gray-200 bg-gray-50'
+              }`}>
+                <div className={`rounded-full p-1.5 mr-2 ${
+                  isComplete ? 'bg-green-100' : 
+                  isActive ? 'bg-blue-100' : 
+                  'bg-gray-100'
+                }`}>
+                  <StepIcon className={`h-4 w-4 ${
+                    isComplete ? 'text-green-500' : 
+                    isActive ? 'text-blue-500' : 
+                    'text-gray-400'
+                  }`} />
+                </div>
+                <div>
+                  <span className="text-xs font-medium">{step.name}</span>
+                  <div className="text-xs text-gray-500">
+                    {isComplete ? 'Complete' : isActive ? 'In progress...' : 'Waiting...'}
+                  </div>
+                </div>
+              </div>
             );
           })}
         </div>
