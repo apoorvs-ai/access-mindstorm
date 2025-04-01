@@ -5,25 +5,51 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CheckCircle, XCircle, AlertCircle, Shield, Cpu, Database } from "lucide-react";
 
+interface LogLine {
+  message: string;
+  status?: "success" | "warning" | "error" | "info" | "pending";
+  timestamp: Date | string;
+}
+
+type TaskState = "waiting" | "in_progress" | "complete";
+
 interface AIAgentProgressBarProps {
   progress: number;
   isComplete: boolean;
   currentAction?: string;
+  // New structured data props
+  data?: {
+    currentStage?: string;
+    progressPercentage?: number;
+    statusText?: string;
+    logLines?: string[];
+    taskStates?: {
+      "Data Synchronization"?: TaskState;
+      "Access Analysis"?: TaskState;
+      "Security Assessment"?: TaskState;
+    };
+  };
 }
 
-type LogEntry = {
-  message: string;
-  status?: "success" | "warning" | "error" | "info" | "pending";
-  timestamp: Date;
-};
-
-const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProgressBarProps) => {
-  const [logs, setLogs] = useState<LogEntry[]>([]);
+const AIAgentProgressBar = ({ progress, isComplete, currentAction, data }: AIAgentProgressBarProps) => {
+  const [logs, setLogs] = useState<LogLine[]>([]);
   const [showTechnicalDetails, setShowTechnicalDetails] = useState(true);
   const [currentTypingMessage, setCurrentTypingMessage] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const logEndRef = useRef<HTMLDivElement>(null);
   
+  // Use either the provided data or fallback to the original implementation
+  const currentProgress = data?.progressPercentage ?? progress;
+  const currentStage = data?.currentStage ?? "";
+  const currentStatusText = data?.statusText ?? currentAction;
+  const taskStates = data?.taskStates ?? {
+    "Data Synchronization": currentProgress < 30 ? "in_progress" : "complete",
+    "Access Analysis": currentProgress >= 30 && currentProgress < 70 ? "in_progress" : 
+                         currentProgress >= 70 ? "complete" : "waiting",
+    "Security Assessment": currentProgress >= 70 ? "in_progress" : 
+                             currentProgress >= 100 ? "complete" : "waiting"
+  };
+
   // Terminal log entries based on progress
   const terminalLogs = [
     { progress: 5, message: "Connecting to HR data source...", status: "success" },
@@ -43,63 +69,118 @@ const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProg
     { progress: 100, message: "Analysis complete. Review recommendations below.", status: "success" }
   ];
 
-  // Add new log entries based on progress
+  // Process structured log lines from props if available
   useEffect(() => {
-    if (isComplete) {
-      // Ensure the complete message is added
-      const finalLog = terminalLogs[terminalLogs.length - 1];
-      if (!logs.some(log => log.message === finalLog.message)) {
-        setLogs(prev => [...prev, {
-          message: finalLog.message,
-          status: finalLog.status as any,
+    if (data?.logLines && data.logLines.length > 0) {
+      const newLogs = data.logLines.map(logLine => {
+        // Parse status from the log line (look for indicators like ✅, ⚠️, ❌)
+        let status: "success" | "warning" | "error" | "info" | "pending" = "info";
+        if (logLine.includes("✅")) status = "success";
+        else if (logLine.includes("⚠️")) status = "warning"; 
+        else if (logLine.includes("❌")) status = "error";
+        
+        return {
+          message: logLine,
+          status,
           timestamp: new Date()
-        }]);
+        };
+      });
+      
+      // Add new logs with typing animation
+      if (newLogs.length > 0 && !isTyping) {
+        setIsTyping(true);
+        let typingTimeout: NodeJS.Timeout;
+        let currentText = "";
+        const fullMessage = newLogs[0].message;
+        
+        const typeNextCharacter = (index: number) => {
+          if (index < fullMessage.length) {
+            currentText += fullMessage[index];
+            setCurrentTypingMessage(currentText);
+            
+            typingTimeout = setTimeout(() => {
+              typeNextCharacter(index + 1);
+            }, 30);
+          } else {
+            // Typing complete, add to logs
+            setLogs(prev => [...prev, newLogs[0]]);
+            setCurrentTypingMessage("");
+            setIsTyping(false);
+            
+            // Handle remaining logs sequentially
+            if (newLogs.length > 1) {
+              setTimeout(() => {
+                const remainingLogs = newLogs.slice(1);
+                setLogs(prev => [...prev, ...remainingLogs]);
+              }, 300);
+            }
+          }
+        };
+        
+        typeNextCharacter(0);
+        
+        return () => {
+          clearTimeout(typingTimeout);
+        };
       }
-      return;
-    }
-
-    const matchingLogs = terminalLogs.filter(log => {
-      return log.progress <= progress && !logs.some(existingLog => existingLog.message === log.message);
-    });
-
-    if (matchingLogs.length > 0) {
-      // Add one log at a time with a typing animation
-      const nextLog = matchingLogs[0];
-      setIsTyping(true);
-      
-      let typingTimeout: NodeJS.Timeout;
-      let currentText = "";
-      const fullMessage = nextLog.extra 
-        ? `${nextLog.message} ${nextLog.extra}`
-        : nextLog.message;
-      
-      const typeNextCharacter = (index: number) => {
-        if (index < fullMessage.length) {
-          currentText += fullMessage[index];
-          setCurrentTypingMessage(currentText);
-          
-          typingTimeout = setTimeout(() => {
-            typeNextCharacter(index + 1);
-          }, 30);
-        } else {
-          // Typing complete, add to logs
+    } else {
+      // Use original implementation with hardcoded logs
+      if (isComplete) {
+        // Ensure the complete message is added
+        const finalLog = terminalLogs[terminalLogs.length - 1];
+        if (!logs.some(log => log.message === finalLog.message)) {
           setLogs(prev => [...prev, {
-            message: fullMessage,
-            status: nextLog.status as any,
+            message: finalLog.message,
+            status: finalLog.status as any,
             timestamp: new Date()
           }]);
-          setCurrentTypingMessage("");
-          setIsTyping(false);
         }
-      };
-      
-      typeNextCharacter(0);
-      
-      return () => {
-        clearTimeout(typingTimeout);
-      };
+        return;
+      }
+
+      const matchingLogs = terminalLogs.filter(log => {
+        return log.progress <= currentProgress && !logs.some(existingLog => existingLog.message === log.message);
+      });
+
+      if (matchingLogs.length > 0 && !isTyping) {
+        // Add one log at a time with a typing animation
+        const nextLog = matchingLogs[0];
+        setIsTyping(true);
+        
+        let typingTimeout: NodeJS.Timeout;
+        let currentText = "";
+        const fullMessage = nextLog.extra 
+          ? `${nextLog.message} ${nextLog.extra}`
+          : nextLog.message;
+        
+        const typeNextCharacter = (index: number) => {
+          if (index < fullMessage.length) {
+            currentText += fullMessage[index];
+            setCurrentTypingMessage(currentText);
+            
+            typingTimeout = setTimeout(() => {
+              typeNextCharacter(index + 1);
+            }, 30);
+          } else {
+            // Typing complete, add to logs
+            setLogs(prev => [...prev, {
+              message: fullMessage,
+              status: nextLog.status as any,
+              timestamp: new Date()
+            }]);
+            setCurrentTypingMessage("");
+            setIsTyping(false);
+          }
+        };
+        
+        typeNextCharacter(0);
+        
+        return () => {
+          clearTimeout(typingTimeout);
+        };
+      }
     }
-  }, [progress, logs, isComplete]);
+  }, [currentProgress, logs, isComplete, data?.logLines, isTyping]);
 
   // Auto-scroll to bottom of logs
   useEffect(() => {
@@ -111,8 +192,8 @@ const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProg
   // Get a color style based on progress
   const getProgressColor = () => {
     if (isComplete) return "bg-gradient-to-r from-green-400 to-green-500";
-    if (progress < 30) return "bg-gradient-to-r from-blue-400 to-blue-500";
-    if (progress < 70) return "bg-gradient-to-r from-blue-400 via-amber-400 to-amber-500";
+    if (currentProgress < 30) return "bg-gradient-to-r from-blue-400 to-blue-500";
+    if (currentProgress < 70) return "bg-gradient-to-r from-blue-400 via-amber-400 to-amber-500";
     return "bg-gradient-to-r from-amber-400 to-green-500";
   };
 
@@ -132,11 +213,18 @@ const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProg
   };
 
   // Format timestamp for logs
-  const formatTime = (date: Date) => {
+  const formatTime = (date: Date | string) => {
+    if (typeof date === 'string') {
+      // Check if the string already contains a formatted time
+      if (date.match(/\[\d{2}:\d{2}:\d{2}/)) {
+        return date.match(/\[([^\]]+)\]/)?.[1] || date;
+      }
+      return date;
+    }
     return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
   };
 
-  // Get task components based on progress
+  // Get task components based on progress and stage data
   const getTaskComponents = () => {
     const tasks = [
       { name: "Data Synchronization", icon: Database, threshold: 15, logIndex: 0 },
@@ -145,16 +233,17 @@ const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProg
     ];
 
     return tasks.map((task, index) => {
-      const isActive = progress >= task.threshold;
-      const isComplete = progress >= task.threshold + 20;
+      const taskState = taskStates[task.name as keyof typeof taskStates] || "waiting";
+      const isActive = taskState === "in_progress";
+      const isComplete = taskState === "complete";
       const TaskIcon = task.icon;
       
       // Get current log for this task
       let currentLog = "";
-      if (isActive && !isComplete && logs.length > task.logIndex) {
+      if (isActive && logs.length > task.logIndex) {
         const activeLogIndex = Math.min(
           logs.length - 1,
-          task.logIndex + Math.floor((progress - task.threshold) / 5)
+          task.logIndex + Math.floor((currentProgress - task.threshold) / 5)
         );
         currentLog = logs[activeLogIndex]?.message || "";
       }
@@ -200,13 +289,13 @@ const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProg
         <div className="relative w-full h-2.5 mb-4">
           {/* Particles overlay */}
           <div className="absolute inset-0 overflow-hidden">
-            {progress > 0 && !isComplete && Array.from({ length: 5 }).map((_, i) => (
+            {currentProgress > 0 && !isComplete && Array.from({ length: 5 }).map((_, i) => (
               <span 
                 key={i}
                 className="absolute animate-ping opacity-75"
                 style={{
                   top: `${Math.random() * 100}%`,
-                  left: `${Math.min(progress, 100) * Math.random()}%`,
+                  left: `${Math.min(currentProgress, 100) * Math.random()}%`,
                   width: '4px',
                   height: '4px',
                   borderRadius: '50%',
@@ -223,15 +312,20 @@ const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProg
             <div 
               className={`h-full transition-all duration-500 ease-out ${getProgressColor()}`} 
               style={{ 
-                width: `${progress}%`,
+                width: `${currentProgress}%`,
                 boxShadow: `0 0 8px ${isComplete ? 'rgba(52, 211, 153, 0.5)' : 'rgba(59, 130, 246, 0.5)'}` 
               }}
             />
           </div>
           
           {/* Progress percentage */}
-          <div className="absolute right-0 -top-6 text-xs font-medium">{progress}%</div>
+          <div className="absolute right-0 -top-6 text-xs font-medium">{currentProgress}%</div>
         </div>
+
+        {/* Current Status Text */}
+        {currentStatusText && (
+          <div className="text-sm text-center text-gray-700 mb-2">{currentStatusText}</div>
+        )}
 
         {/* Terminal Log Section */}
         <div className="flex items-center justify-between mb-2">
@@ -295,7 +389,7 @@ const AIAgentProgressBar = ({ progress, isComplete, currentAction }: AIAgentProg
       </div>
 
       {/* Task steps with status indicators */}
-      {progress > 5 && (
+      {currentProgress > 5 && (
         <div className="w-full mt-2 grid grid-cols-1 md:grid-cols-3 gap-3">
           {getTaskComponents()}
         </div>

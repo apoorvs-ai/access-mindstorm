@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -74,6 +73,20 @@ interface User {
   userAction?: UserAction;
 }
 
+type TaskState = "waiting" | "in_progress" | "complete";
+
+interface AnalysisData {
+  currentStage: string;
+  progressPercentage: number;
+  statusText: string;
+  logLines: string[];
+  taskStates: {
+    "Data Synchronization": TaskState;
+    "Access Analysis": TaskState;
+    "Security Assessment": TaskState;
+  };
+}
+
 const Index = () => {
   const [isReviewStarted, setIsReviewStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -84,6 +97,7 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers] = useState(0);
+  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const usersPerPage = 6;
   const [users, setUsers] = useState<User[]>([
     { 
@@ -207,6 +221,43 @@ const Index = () => {
     "Formulating access recommendations..."
   ];
 
+  const logMessagesTemplates = {
+    dataSynchronization: [
+      "> Connecting to HR data source... ✅",
+      "> Retrieving user records (345 total)...",
+      "> Scanning access logs from Active Directory...",
+      "> Detecting AD groups and permissions...",
+      "> Building user-role relationship matrix..."
+    ],
+    accessAnalysis: [
+      "> Cross-checking user roles with system permissions...",
+      "> Detecting orphaned accounts... ⚠️ 2 flagged",
+      "> Assessing least privilege violations...",
+      "> Running anomaly detection on high-risk access...",
+      "> Examining user login patterns..."
+    ],
+    securityAssessment: [
+      "> Checking dormant accounts... ⚠️ 3 accounts inactive > 90 days",
+      "> Validating separation of duties... ✅",
+      "> Flagging excessive privileges... ⚠️ 5 users with unnecessary admin rights",
+      "> Generating risk scores for each user...",
+      "> Creating security compliance report..."
+    ],
+    completion: [
+      "> Finalizing access recommendations... ✅",
+      "> Analysis complete. Review recommendations below. ✅"
+    ]
+  };
+
+  const getTimestamp = () => {
+    const now = new Date();
+    return `[${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]`;
+  };
+
+  const formatLogLine = (line: string) => {
+    return `${getTimestamp()} ${line}`;
+  };
+
   const handleStartReview = () => {
     setIsReviewStarted(true);
     setIsLoading(true);
@@ -215,6 +266,18 @@ const Index = () => {
     setUsersReviewed([]);
     setAnalysisComplete(false);
 
+    setAnalysisData({
+      currentStage: "Data Synchronization",
+      progressPercentage: 0,
+      statusText: "Initializing user access review...",
+      logLines: [],
+      taskStates: {
+        "Data Synchronization": "in_progress",
+        "Access Analysis": "waiting",
+        "Security Assessment": "waiting"
+      }
+    });
+
     toast.info("AI Access Review initiated", {
       description: "Beginning comprehensive access pattern analysis"
     });
@@ -222,21 +285,111 @@ const Index = () => {
     const simulateProgress = () => {
       let currentProgress = 0;
       let messageIndex = 0;
+      let currentStage = "Data Synchronization";
+      let currentLogBatch = 0;
+      const logLines: string[] = [];
 
       const interval = setInterval(() => {
         currentProgress += Math.floor(Math.random() * 5) + 1;
         
         if (currentProgress >= 100) {
           currentProgress = 100;
+          currentStage = "Complete";
           clearInterval(interval);
           setIsLoading(false);
           setAnalysisComplete(true);
+          
+          const completionLog = formatLogLine(logMessagesTemplates.completion[1]);
+          setAnalysisData(prev => ({
+            currentStage: "Complete",
+            progressPercentage: 100,
+            statusText: "Analysis complete. Review recommendations below.",
+            logLines: [...(prev?.logLines || []), completionLog],
+            taskStates: {
+              "Data Synchronization": "complete",
+              "Access Analysis": "complete",
+              "Security Assessment": "complete"
+            }
+          }));
+          
           toast.success("AI Agent Analysis complete", {
             description: "All agents have completed their tasks and generated recommendations"
           });
-        } else if (currentProgress > (messageIndex + 1) * 12 && messageIndex < loadingMessages.length - 1) {
-          messageIndex++;
-          setCurrentAction(loadingMessages[messageIndex]);
+        } else {
+          let newStage = currentStage;
+          let stageLogMessages;
+          let taskStates = {
+            "Data Synchronization": "complete" as TaskState,
+            "Access Analysis": "waiting" as TaskState,
+            "Security Assessment": "waiting" as TaskState
+          };
+          
+          if (currentProgress < 30) {
+            newStage = "Data Synchronization";
+            stageLogMessages = logMessagesTemplates.dataSynchronization;
+            taskStates = {
+              "Data Synchronization": "in_progress",
+              "Access Analysis": "waiting",
+              "Security Assessment": "waiting"
+            };
+          } else if (currentProgress < 70) {
+            newStage = "Access Analysis";
+            stageLogMessages = logMessagesTemplates.accessAnalysis;
+            taskStates = {
+              "Data Synchronization": "complete",
+              "Access Analysis": "in_progress",
+              "Security Assessment": "waiting"
+            };
+          } else {
+            newStage = "Security Assessment";
+            stageLogMessages = logMessagesTemplates.securityAssessment;
+            taskStates = {
+              "Data Synchronization": "complete",
+              "Access Analysis": "complete",
+              "Security Assessment": "in_progress"
+            };
+          }
+          
+          if (newStage !== currentStage) {
+            currentStage = newStage;
+            currentLogBatch = 0;
+            
+            if (currentStage === "Access Analysis") {
+              const transitionLog = formatLogLine("> Data Synchronization complete ✅");
+              logLines.push(transitionLog);
+            } else if (currentStage === "Security Assessment") {
+              const transitionLog = formatLogLine("> Access Analysis complete ✅");
+              logLines.push(transitionLog);
+            }
+          }
+          
+          if (stageLogMessages && currentLogBatch < stageLogMessages.length) {
+            const progressPerBatch = (currentStage === "Data Synchronization" ? 30 : 
+                                      currentStage === "Access Analysis" ? 40 : 30) / stageLogMessages.length;
+            
+            const progressThreshold = (currentStage === "Data Synchronization" ? 0 : 
+                                      currentStage === "Access Analysis" ? 30 : 70) + 
+                                      (progressPerBatch * currentLogBatch);
+            
+            if (currentProgress >= progressThreshold) {
+              const newLog = formatLogLine(stageLogMessages[currentLogBatch]);
+              logLines.push(newLog);
+              currentLogBatch++;
+            }
+          }
+          
+          if (currentProgress > (messageIndex + 1) * 12 && messageIndex < loadingMessages.length - 1) {
+            messageIndex++;
+            setCurrentAction(loadingMessages[messageIndex]);
+          }
+          
+          setAnalysisData({
+            currentStage,
+            progressPercentage: currentProgress,
+            statusText: loadingMessages[messageIndex],
+            logLines,
+            taskStates
+          });
         }
         
         setProgress(currentProgress);
@@ -380,6 +533,7 @@ const Index = () => {
                   progress={progress}
                   isComplete={analysisComplete}
                   currentAction={currentAction}
+                  data={analysisData || undefined}
                 />
               </div>
             </CardContent>
