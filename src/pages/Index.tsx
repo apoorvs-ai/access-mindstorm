@@ -6,33 +6,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Input } from "@/components/ui/input";
-import { Progress } from "@/components/ui/progress";
-import { 
-  Breadcrumb,
-  BreadcrumbItem,
-  BreadcrumbLink,
-  BreadcrumbList,
-  BreadcrumbPage,
-  BreadcrumbSeparator,
-} from "@/components/ui/breadcrumb";
-import { 
-  Table,
-  TableBody,
-  TableCaption,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
-import { 
-  Pagination,
-  PaginationContent,
-  PaginationEllipsis,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from "@/components/ui/pagination";
 import { 
   Zap, 
   Plus, 
@@ -55,7 +28,16 @@ import {
   Search
 } from "lucide-react";
 import { toast } from "sonner";
-import AIAgentProgressBar from "@/components/AIAgentProgressBar";
+import AITaskProgressBar from "@/components/AITaskProgressBar";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationEllipsis,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
 import UserActionToggle from "@/components/UserActionToggle";
 
 type UserAction = 'approve' | 'modify' | 'revoke' | null;
@@ -73,20 +55,6 @@ interface User {
   userAction?: UserAction;
 }
 
-type TaskState = "waiting" | "in_progress" | "complete";
-
-interface AnalysisData {
-  currentStage: string;
-  progressPercentage: number;
-  statusText: string;
-  logLines: string[];
-  taskStates: {
-    "Data Synchronization": TaskState;
-    "Access Analysis": TaskState;
-    "Security Assessment": TaskState;
-  };
-}
-
 const Index = () => {
   const [isReviewStarted, setIsReviewStarted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -97,7 +65,6 @@ const Index = () => {
   const [searchQuery, setSearchQuery] = useState("");
   const [currentPage, setCurrentPage] = useState(1);
   const [totalUsers] = useState(0);
-  const [analysisData, setAnalysisData] = useState<AnalysisData | null>(null);
   const usersPerPage = 6;
   const [users, setUsers] = useState<User[]>([
     { 
@@ -221,43 +188,6 @@ const Index = () => {
     "Formulating access recommendations..."
   ];
 
-  const logMessagesTemplates = {
-    dataSynchronization: [
-      "> Connecting to HR data source... ✅",
-      "> Retrieving user records (345 total)...",
-      "> Scanning access logs from Active Directory...",
-      "> Detecting AD groups and permissions...",
-      "> Building user-role relationship matrix..."
-    ],
-    accessAnalysis: [
-      "> Cross-checking user roles with system permissions...",
-      "> Detecting orphaned accounts... ⚠️ 2 flagged",
-      "> Assessing least privilege violations...",
-      "> Running anomaly detection on high-risk access...",
-      "> Examining user login patterns..."
-    ],
-    securityAssessment: [
-      "> Checking dormant accounts... ⚠️ 3 accounts inactive > 90 days",
-      "> Validating separation of duties... ✅",
-      "> Flagging excessive privileges... ⚠️ 5 users with unnecessary admin rights",
-      "> Generating risk scores for each user...",
-      "> Creating security compliance report..."
-    ],
-    completion: [
-      "> Finalizing access recommendations... ✅",
-      "> Analysis complete. Review recommendations below. ✅"
-    ]
-  };
-
-  const getTimestamp = () => {
-    const now = new Date();
-    return `[${now.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}]`;
-  };
-
-  const formatLogLine = (line: string) => {
-    return `${getTimestamp()} ${line}`;
-  };
-
   const handleStartReview = () => {
     setIsReviewStarted(true);
     setIsLoading(true);
@@ -266,18 +196,6 @@ const Index = () => {
     setUsersReviewed([]);
     setAnalysisComplete(false);
 
-    setAnalysisData({
-      currentStage: "Data Synchronization",
-      progressPercentage: 0,
-      statusText: "Initializing user access review...",
-      logLines: [],
-      taskStates: {
-        "Data Synchronization": "in_progress",
-        "Access Analysis": "waiting",
-        "Security Assessment": "waiting"
-      }
-    });
-
     toast.info("AI Access Review initiated", {
       description: "Beginning comprehensive access pattern analysis"
     });
@@ -285,111 +203,21 @@ const Index = () => {
     const simulateProgress = () => {
       let currentProgress = 0;
       let messageIndex = 0;
-      let currentStage = "Data Synchronization";
-      let currentLogBatch = 0;
-      const logLines: string[] = [];
 
       const interval = setInterval(() => {
         currentProgress += Math.floor(Math.random() * 5) + 1;
         
         if (currentProgress >= 100) {
           currentProgress = 100;
-          currentStage = "Complete";
           clearInterval(interval);
           setIsLoading(false);
           setAnalysisComplete(true);
-          
-          const completionLog = formatLogLine(logMessagesTemplates.completion[1]);
-          setAnalysisData(prev => ({
-            currentStage: "Complete",
-            progressPercentage: 100,
-            statusText: "Analysis complete. Review recommendations below.",
-            logLines: [...(prev?.logLines || []), completionLog],
-            taskStates: {
-              "Data Synchronization": "complete",
-              "Access Analysis": "complete",
-              "Security Assessment": "complete"
-            }
-          }));
-          
           toast.success("AI Agent Analysis complete", {
             description: "All agents have completed their tasks and generated recommendations"
           });
-        } else {
-          let newStage = currentStage;
-          let stageLogMessages;
-          let taskStates = {
-            "Data Synchronization": "complete" as TaskState,
-            "Access Analysis": "waiting" as TaskState,
-            "Security Assessment": "waiting" as TaskState
-          };
-          
-          if (currentProgress < 30) {
-            newStage = "Data Synchronization";
-            stageLogMessages = logMessagesTemplates.dataSynchronization;
-            taskStates = {
-              "Data Synchronization": "in_progress",
-              "Access Analysis": "waiting",
-              "Security Assessment": "waiting"
-            };
-          } else if (currentProgress < 70) {
-            newStage = "Access Analysis";
-            stageLogMessages = logMessagesTemplates.accessAnalysis;
-            taskStates = {
-              "Data Synchronization": "complete",
-              "Access Analysis": "in_progress",
-              "Security Assessment": "waiting"
-            };
-          } else {
-            newStage = "Security Assessment";
-            stageLogMessages = logMessagesTemplates.securityAssessment;
-            taskStates = {
-              "Data Synchronization": "complete",
-              "Access Analysis": "complete",
-              "Security Assessment": "in_progress"
-            };
-          }
-          
-          if (newStage !== currentStage) {
-            currentStage = newStage;
-            currentLogBatch = 0;
-            
-            if (currentStage === "Access Analysis") {
-              const transitionLog = formatLogLine("> Data Synchronization complete ✅");
-              logLines.push(transitionLog);
-            } else if (currentStage === "Security Assessment") {
-              const transitionLog = formatLogLine("> Access Analysis complete ✅");
-              logLines.push(transitionLog);
-            }
-          }
-          
-          if (stageLogMessages && currentLogBatch < stageLogMessages.length) {
-            const progressPerBatch = (currentStage === "Data Synchronization" ? 30 : 
-                                      currentStage === "Access Analysis" ? 40 : 30) / stageLogMessages.length;
-            
-            const progressThreshold = (currentStage === "Data Synchronization" ? 0 : 
-                                      currentStage === "Access Analysis" ? 30 : 70) + 
-                                      (progressPerBatch * currentLogBatch);
-            
-            if (currentProgress >= progressThreshold) {
-              const newLog = formatLogLine(stageLogMessages[currentLogBatch]);
-              logLines.push(newLog);
-              currentLogBatch++;
-            }
-          }
-          
-          if (currentProgress > (messageIndex + 1) * 12 && messageIndex < loadingMessages.length - 1) {
-            messageIndex++;
-            setCurrentAction(loadingMessages[messageIndex]);
-          }
-          
-          setAnalysisData({
-            currentStage,
-            progressPercentage: currentProgress,
-            statusText: loadingMessages[messageIndex],
-            logLines,
-            taskStates
-          });
+        } else if (currentProgress > (messageIndex + 1) * 12 && messageIndex < loadingMessages.length - 1) {
+          messageIndex++;
+          setCurrentAction(loadingMessages[messageIndex]);
         }
         
         setProgress(currentProgress);
@@ -433,34 +261,19 @@ const Index = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="bg-gray-100 px-6 py-3 text-sm text-gray-600 border-b border-gray-200">
+      <div className="bg-gray-100 px-6 py-3 text-sm text-gray-600">
         <div className="max-w-7xl mx-auto">
-          <Breadcrumb>
-            <BreadcrumbList>
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Security</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">User Access Review</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbLink href="/">Access Review</BreadcrumbLink>
-              </BreadcrumbItem>
-              <BreadcrumbSeparator />
-              <BreadcrumbItem>
-                <BreadcrumbPage>System Review For Jira</BreadcrumbPage>
-              </BreadcrumbItem>
-            </BreadcrumbList>
-          </Breadcrumb>
+          <Link to="/" className="hover:text-gray-800">Security</Link> / 
+          <Link to="/" className="hover:text-gray-800"> User Access Review</Link> / 
+          <Link to="/" className="hover:text-gray-800"> Access Review</Link> /
+          <span className="font-semibold text-gray-800"> System Review For Jira</span>
         </div>
       </div>
       
       <div className="max-w-7xl mx-auto p-6">
-        <h1 className="text-2xl font-bold mb-4 text-gray-800">System Review For Jira</h1>
+        <h1 className="text-2xl font-bold mb-4">System Review For Jira</h1>
         
-        <Card className="mb-6 border border-gray-200 shadow-sm">
+        <Card className="mb-6">
           <div className="grid grid-cols-1 md:grid-cols-12 gap-4 p-4">
             <div className="md:col-span-2 flex items-center justify-center md:justify-start">
               <div className="bg-blue-50 p-3 rounded-md">
@@ -473,45 +286,47 @@ const Index = () => {
             </div>
             
             <div className="md:col-span-2">
-              <h3 className="font-bold text-gray-800">Jira</h3>
+              <h3 className="font-bold">Jira</h3>
               <p className="text-sm text-gray-600">Service Management</p>
               <p className="text-sm text-gray-600">And CRM</p>
             </div>
             
             <div className="md:col-span-2">
-              <p className="text-sm font-medium mb-1 text-gray-700">Progress</p>
-              <Progress value={30} className="h-2 bg-gray-200" />
+              <p className="text-sm font-medium mb-1">Progress</p>
+              <div className="h-2.5 bg-gray-200 rounded-full w-full">
+                <div className="h-2.5 bg-blue-400 rounded-full" style={{ width: '30%' }}></div>
+              </div>
               <p className="text-right text-xs text-gray-600 mt-1">0/0</p>
             </div>
             
             <div className="md:col-span-2">
-              <p className="text-sm font-medium text-gray-700">Reviewer</p>
+              <p className="text-sm font-medium">Reviewer</p>
               <p className="text-gray-600">N/A</p>
               
-              <p className="text-sm font-medium mt-3 text-gray-700">Created Date</p>
+              <p className="text-sm font-medium mt-3">Created Date</p>
               <p className="text-gray-600">03/31/2025</p>
             </div>
             
             <div className="md:col-span-2">
-              <p className="text-sm font-medium text-gray-700">Modified Permissions</p>
+              <p className="text-sm font-medium">Modified Permissions</p>
               <p className="text-gray-600">N/A</p>
               
-              <p className="text-sm font-medium mt-3 text-gray-700">Due Date</p>
+              <p className="text-sm font-medium mt-3">Due Date</p>
               <p className="text-gray-600">04/07/2025</p>
             </div>
             
             <div className="md:col-span-2">
-              <p className="text-sm font-medium text-gray-700">Removed Permissions</p>
+              <p className="text-sm font-medium">Removed Permissions</p>
               <p className="text-gray-600">N/A</p>
               
-              <p className="text-sm font-medium mt-3 text-gray-700">Status</p>
+              <p className="text-sm font-medium mt-3">Status</p>
               <Badge className="bg-orange-100 text-orange-600 hover:bg-orange-100">Incomplete</Badge>
             </div>
           </div>
         </Card>
         
         {isReviewStarted && isLoading && (
-          <Card className="mb-6 border border-gray-200 shadow-sm">
+          <Card className="mb-6">
             <CardHeader className="pb-2">
               <CardTitle>AI Access Review Progress</CardTitle>
               <CardDescription>Processing access patterns and detecting anomalies...</CardDescription>
@@ -529,11 +344,9 @@ const Index = () => {
                   </div>
                 </div>
                 
-                <AIAgentProgressBar 
+                <AITaskProgressBar 
                   progress={progress}
                   isComplete={analysisComplete}
-                  currentAction={currentAction}
-                  data={analysisData || undefined}
                 />
               </div>
             </CardContent>
@@ -541,10 +354,10 @@ const Index = () => {
         )}
         
         {!isReviewStarted && (
-          <Card className="mb-6 border border-gray-200 shadow-sm">
+          <Card className="mb-6">
             <CardContent className="p-6 flex justify-center">
               <Button 
-                className="w-full max-w-md bg-blue-600 hover:bg-blue-700" 
+                className="w-full max-w-md" 
                 onClick={handleStartReview}
                 disabled={isLoading}
               >
@@ -564,11 +377,11 @@ const Index = () => {
           </Card>
         )}
 
-        <Card className="mb-6 border border-gray-200 shadow-sm">
+        <Card className="mb-6">
           <CardHeader className="pb-3">
             <div className="flex justify-between items-center">
-              <CardTitle>User Access</CardTitle>
-              <Button size="sm" variant="outline" className="border-gray-300">
+              <CardTitle>User</CardTitle>
+              <Button size="sm" variant="outline">
                 <Plus className="h-4 w-4 mr-2" />
                 Add User
               </Button>
@@ -581,16 +394,19 @@ const Index = () => {
                 <Input
                   type="text"
                   placeholder="Search users..."
-                  className="pl-9 border-gray-300"
+                  className="pl-9"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
-              <Button variant="outline" size="icon" className="h-10 w-10 border-gray-300">
-                <Filter className="h-4 w-4 text-gray-600" />
+              <Button variant="outline" size="icon" className="h-10 w-10">
+                <Filter className="h-4 w-4" />
               </Button>
-              <Button variant="outline" className="w-full md:w-auto border-gray-300 text-gray-700">
+              <Button variant="outline" className="w-full md:w-auto">
                 {filteredUsers.length} Results
+              </Button>
+              <Button variant="secondary" className="w-full md:w-auto">
+                Completed
               </Button>
             </div>
 
@@ -602,7 +418,7 @@ const Index = () => {
                   <p className="text-green-600 text-sm">All users have been analyzed and recommendations are available</p>
                 </div>
                 <Button 
-                  className="ml-auto bg-green-600 hover:bg-green-700"
+                  className="ml-auto"
                   onClick={applyAllRecommendations}
                   size="sm"
                 >
@@ -612,7 +428,7 @@ const Index = () => {
             )}
 
             {filteredUsers.length > 0 ? (
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {currentUsers.map((user) => {
                   const isBeingReviewed = isReviewStarted && isLoading && 
                     !usersReviewed.includes(user.name) && 
@@ -630,68 +446,80 @@ const Index = () => {
                     : "";
                   
                   return (
-                    <Card key={user.id} className={`border border-gray-200 ${isBeingReviewed ? "animate-pulse" : ""}`}>
-                      <CardHeader className="pb-2">
-                        <div className="flex items-start justify-between">
+                    <Card key={user.id} className={`overflow-hidden hover:shadow-md transition-shadow ${
+                      isBeingReviewed ? "animate-pulse" : ""
+                    }`}>
+                      {isReviewed && userRecommendation && (
+                        <div className={`h-1 ${
+                          userRecommendation === "approve" ? "bg-green-500" :
+                          userRecommendation === "revoke" ? "bg-red-500" : "bg-orange-500"
+                        }`}></div>
+                      )}
+                      {!isReviewed && <div className="h-1 bg-blue-400"></div>}
+                      <CardContent className="p-4">
+                        <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center">
                             <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center mr-3">
                               <User className="h-5 w-5 text-blue-600" />
                             </div>
                             <div>
-                              <h3 className="font-medium text-gray-800">{user.name}</h3>
-                              <p className="text-xs text-gray-500">{user.role}</p>
+                              <h3 className="font-medium text-sm">{user.name}</h3>
+                              <p className="text-xs text-gray-500">{user.role || user.employment}</p>
                             </div>
                           </div>
-                          
-                          <div className="flex items-center gap-2">
-                            {isReviewed && userRecommendation && (
-                              <div className={`flex items-center ${
-                                userRecommendation === "approve" ? "text-green-600" :
-                                userRecommendation === "revoke" ? "text-red-600" : "text-orange-600"
-                              }`}>
-                                {userRecommendation === "approve" && <CheckCircle className="h-4 w-4" />}
-                                {userRecommendation === "revoke" && <XCircle className="h-4 w-4" />}
-                                {userRecommendation === "modify" && <Edit className="h-4 w-4" />}
-                              </div>
-                            )}
-                            <UserActionToggle 
-                              value={user.userAction} 
-                              onValueChange={(action) => handleUserActionChange(user.id, action)}
-                              size="sm" 
-                            />
+                          <Badge variant={user.access === "Admin" ? "destructive" : "default"} className="text-xs">
+                            {user.access}
+                          </Badge>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-2 mb-3">
+                          <div className="bg-gray-50 p-2 rounded text-xs">
+                            <span className="block text-gray-500">Type</span>
+                            <span className="font-medium">{user.type}</span>
+                          </div>
+                          <div className="bg-gray-50 p-2 rounded text-xs">
+                            <span className="block text-gray-500">Last Active</span>
+                            <span className="font-medium">{user.lastActive}</span>
                           </div>
                         </div>
-                      </CardHeader>
-                      <CardContent className="pb-4">
-                        <div className="grid grid-cols-2 gap-2 text-sm">
-                          <div>
-                            <p className="text-gray-600 font-medium">Access</p>
-                            <Badge variant={user.access === "Admin" ? "destructive" : "default"} className="text-xs mt-1">
-                              {user.access}
-                            </Badge>
-                          </div>
-                          <div>
-                            <p className="text-gray-600 font-medium">Last Active</p>
-                            <p className="text-gray-800">{user.lastActive}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600 font-medium">Type</p>
-                            <p className="text-gray-800">{user.type}</p>
-                          </div>
-                          <div>
-                            <p className="text-gray-600 font-medium">Employment</p>
-                            <p className="text-gray-800">{user.employment}</p>
-                          </div>
-                        </div>
-                        <div className="mt-3">
-                          <p className="text-gray-600 font-medium">System Groups</p>
-                          <div className="flex flex-wrap gap-1 mt-1">
+                        
+                        <div className="text-xs mb-3">
+                          <span className="text-gray-500 block mb-1">System Groups</span>
+                          <div className="flex flex-wrap gap-1">
                             {user.systemGroups.map((group, idx) => (
-                              <Badge key={idx} variant="outline" className="bg-gray-100 font-normal text-xs">
+                              <Badge key={idx} variant="outline" className="bg-gray-100 font-normal">
                                 {group}
                               </Badge>
                             ))}
                           </div>
+                        </div>
+                        
+                        {isReviewed && userRecommendation && (
+                          <div className={`mb-3 p-2 rounded text-sm flex items-center ${
+                            userRecommendation === "approve" ? "bg-green-50 text-green-700" :
+                            userRecommendation === "revoke" ? "bg-red-50 text-red-700" : "bg-orange-50 text-orange-700"
+                          }`}>
+                            {userRecommendation === "approve" && <CheckCircle className="h-4 w-4 mr-2" />}
+                            {userRecommendation === "revoke" && <XCircle className="h-4 w-4 mr-2" />}
+                            {userRecommendation === "modify" && <Edit className="h-4 w-4 mr-2" />}
+                            {userRecommendation === "approve" && "Maintain current permissions"}
+                            {userRecommendation === "revoke" && "Revoke access privileges"}
+                            {userRecommendation === "modify" && "Modify access rights"}
+                          </div>
+                        )}
+                        
+                        {isBeingReviewed && (
+                          <div className="mb-3 p-2 bg-indigo-50 rounded text-sm flex items-center text-indigo-700">
+                            <div className="animate-spin h-4 w-4 mr-2 border-2 border-indigo-500 border-t-transparent rounded-full"></div>
+                            Analyzing access patterns...
+                          </div>
+                        )}
+                        
+                        <div className="flex mt-2 pt-2 border-t justify-end gap-2">
+                          <UserActionToggle 
+                            value={user.userAction} 
+                            onValueChange={(action) => handleUserActionChange(user.id, action)} 
+                          />
                         </div>
                       </CardContent>
                     </Card>
