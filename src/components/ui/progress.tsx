@@ -20,7 +20,8 @@ const Progress = React.forwardRef<
       className="h-full w-full flex-1 bg-primary transition-all"
       style={{ 
         transform: `translateX(-${100 - (value || 0)}%)`,
-        boxShadow: value && value > 0 ? "0 0 10px 1px currentColor" : "none"
+        boxShadow: value && value > 0 ? "0 0 10px 1px currentColor" : "none",
+        animation: value && value > 0 ? "pulse 2s infinite" : "none"
       }}
     />
   </ProgressPrimitive.Root>
