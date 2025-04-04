@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from "react";
 import { Link } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
@@ -39,6 +40,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import UserActionToggle from "@/components/UserActionToggle";
+import { cn } from "@/lib/utils";
 
 type UserAction = 'approve' | 'modify' | 'revoke' | null;
 
@@ -444,18 +446,25 @@ const Index = () => {
                             ? "modify" 
                             : "approve")
                     : "";
+                    
+                  // Define background color based on recommendation
+                  const cardBackgroundClass = isReviewed && userRecommendation
+                    ? userRecommendation === "approve" 
+                      ? "bg-green-50" 
+                      : userRecommendation === "revoke"
+                        ? "bg-red-50"
+                        : "bg-orange-50"
+                    : "";
                   
                   return (
-                    <Card key={user.id} className={`overflow-hidden hover:shadow-md transition-shadow ${
-                      isBeingReviewed ? "animate-pulse" : ""
-                    }`}>
-                      {isReviewed && userRecommendation && (
-                        <div className={`h-1 ${
-                          userRecommendation === "approve" ? "bg-green-500" :
-                          userRecommendation === "revoke" ? "bg-red-500" : "bg-orange-500"
-                        }`}></div>
+                    <Card 
+                      key={user.id} 
+                      className={cn(
+                        "overflow-hidden hover:shadow-md transition-shadow",
+                        isBeingReviewed ? "animate-pulse" : "",
+                        cardBackgroundClass
                       )}
-                      {!isReviewed && <div className="h-1 bg-blue-400"></div>}
+                    >
                       <CardContent className="p-4">
                         <div className="flex items-start justify-between mb-3">
                           <div className="flex items-center">
@@ -496,8 +505,8 @@ const Index = () => {
                         
                         {isReviewed && userRecommendation && (
                           <div className={`mb-3 p-2 rounded text-sm flex items-center ${
-                            userRecommendation === "approve" ? "bg-green-50 text-green-700" :
-                            userRecommendation === "revoke" ? "bg-red-50 text-red-700" : "bg-orange-50 text-orange-700"
+                            userRecommendation === "approve" ? "bg-green-100 text-green-700" :
+                            userRecommendation === "revoke" ? "bg-red-100 text-red-700" : "bg-orange-100 text-orange-700"
                           }`}>
                             {userRecommendation === "approve" && <CheckCircle className="h-4 w-4 mr-2" />}
                             {userRecommendation === "revoke" && <XCircle className="h-4 w-4 mr-2" />}
